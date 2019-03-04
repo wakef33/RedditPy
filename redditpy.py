@@ -4,10 +4,11 @@ Quickly gets various information from
 Reddit account.
 '''
 
+import os
 import praw
 import argparse
 
-__version__ = 'RedditPy 0.5.0'
+__version__ = 'RedditPy 0.6.0'
 
 
 class RedditPy():
@@ -121,6 +122,20 @@ def read_conf():
     return conf_list
 
 
+def write_html(search_list):
+    '''
+    Creates html file for viewing
+    '''
+    
+    try:
+        with open('redditpy.html', 'w') as open_html:
+            for i in search_list:
+                open_html.write(str(i[0]) + ": <a href=https://www.reddit.com/" + i[2] + ">" +  i[1] + "</a> --- <a href=" + i[3] + ">Source</a><br />\n")
+    except IOError:
+        print('Error: Could not write to file')
+        raise SystemExit()
+
+
 def main():
     '''
     Starts main program
@@ -128,7 +143,8 @@ def main():
     
     parser = argparse.ArgumentParser(description='Finds information about Reddit user\'s account')
     parser.add_argument('-s', '--search', dest='search', help='Search for keyword in title', required=False, nargs='*', type=str)
-    parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=25, type=int)
+    parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=27, type=int)
+    parser.add_argument('-c', '--clean', dest='clean', help='Removes redditpy.html file', required=False, action='store_true')
     parser.add_argument('-v', '--version', dest='version', help='Prints version number', required=False, action='store_true')
     args = parser.parse_args()
     
@@ -137,18 +153,28 @@ def main():
         print(__version__)
         raise SystemExit()
     
+    # Removes html file
+    if args.clean:
+        try:
+            os.remove('redditpy.html')
+            print("Removed redditpy.hmtl")
+            raise SystemExit()
+        except IOError:
+            print("Error: Could not remove file")
+            raise SystemExit()
+    
     # Creates RedditPy object with argparse number of saved links to look through
     r = RedditPy(args.number)
     
     # Creates list from saved list that matched a string
     if args.search != None:
-        hit_list = []                       # List of IDs that match search string
+        hit_list = []                       # List for match search strings
         for i in args.search:               # Loops through arguments for strings to match on
             for j in r.saved_list:          # Loops through saved list
                 if i in j[1]:               # If string matches in title of saved list
-                    hit_list.append(j[0])   # Append ID to hit_list
-                    print(j)
+                    hit_list.append(j)      # Append to hit_list
 
+    write_html(hit_list)
 
 if __name__ == '__main__':
     main()
