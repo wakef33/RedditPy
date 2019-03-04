@@ -8,7 +8,7 @@ import os
 import praw
 import argparse
 
-__version__ = 'RedditPy 0.6.0'
+__version__ = 'RedditPy 0.6.1'
 
 
 class RedditPy():
@@ -114,7 +114,7 @@ def read_conf():
         with open('redditpy.conf') as open_conf:
             # Creates a list of creds from conf file
             for i in open_conf:
-                settings_list = i.strip().split(':')
+                settings_list = i.strip().split('=')
                 conf_list.append(settings_list[1])
     except IOError:    # redditpy.conf file not found
         print('Error: redditpy.conf not found')
