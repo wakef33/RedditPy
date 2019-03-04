@@ -5,10 +5,12 @@ Reddit account.
 '''
 
 import os
+import time
 import praw
+import threading
 import argparse
 
-__version__ = 'RedditPy 0.6.1'
+__version__ = 'RedditPy 0.7.0'
 
 
 class RedditPy():
@@ -21,6 +23,7 @@ class RedditPy():
         conf_list = read_conf()
         reddit_user_agent, reddit_client_id, reddit_client_secret, reddit_username, reddit_password = conf_list[0], conf_list[1], conf_list[2], conf_list[3], conf_list[4]
         reddit = login(reddit_user_agent, reddit_client_id, reddit_client_secret, reddit_username, reddit_password)     # Logs in with User Creds
+        print("Grabbing Saved Links")
         saved_links = reddit.user.me().saved(limit=number_links)    # Gets list of user's saved links
         
         i = 0
@@ -78,32 +81,6 @@ class RedditPy():
         return url_list
 
 
-def login(reddit_user_agent, reddit_client_id, reddit_client_secret, reddit_username, reddit_password):
-    '''
-    Logs into account
-    '''
-    
-    # Try to login or sleep/wait until logged in, or exit if user/pass wrong
-    NotLoggedIn = True
-    while NotLoggedIn:
-        try:
-            reddit = praw.Reddit(
-                user_agent=reddit_user_agent,
-                client_id=reddit_client_id,
-                client_secret=reddit_client_secret,
-                username=reddit_username,
-                password=reddit_password)
-            print("Logged in")
-            NotLoggedIn = False
-        # TODO: Fix error handling
-        except praw.errors.InvalidUserPass:
-            print("Wrong username or password")
-            raise SystemExit()
-        except Exception as err:
-            print(err)
-    return reddit
-
-
 def read_conf():
     '''
     Get creds from conf file
@@ -122,6 +99,48 @@ def read_conf():
     return conf_list
 
 
+def login(reddit_user_agent, reddit_client_id, reddit_client_secret, reddit_username, reddit_password):
+    '''
+    Logs into account
+    '''
+    
+    # Try to login or sleep/wait until logged in, or exit if user/pass wrong
+    NotLoggedIn = True
+    while NotLoggedIn:
+        print("Logging In")
+        try:
+            reddit = praw.Reddit(
+                user_agent=reddit_user_agent,
+                client_id=reddit_client_id,
+                client_secret=reddit_client_secret,
+                username=reddit_username,
+                password=reddit_password)
+            print("Logged In")
+            NotLoggedIn = False
+        # TODO: Fix error handling
+        except praw.errors.InvalidUserPass:
+            print("Wrong username or password")
+            raise SystemExit()
+        except Exception as err:
+            print(err)
+    return reddit
+
+
+def parse_saves(args_search, r):
+    '''
+    Creates list from saved
+    list that matched a string
+    '''
+    
+    if args_search != None:
+        hit_list = []                       # List for match search strings
+        for i in args_search:               # Loops through arguments for strings to match on
+            for j in r.saved_list:          # Loops through saved list
+                if i in j[1]:               # If string matches in title of saved list
+                    hit_list.append(j)      # Append to hit_list
+        write_html(hit_list)
+
+
 def write_html(search_list):
     '''
     Creates html file for viewing
@@ -134,6 +153,28 @@ def write_html(search_list):
     except IOError:
         print('Error: Could not write to file')
         raise SystemExit()
+
+
+def thread_loop(args_search, r):
+    '''
+    Creates threads to indicate the
+    process is still parsing data
+    '''
+    
+    t2 = threading.Thread(target=parse_saves, args=(args_search, r), name='t2')
+    t2.start()
+    while True:
+        print('Parsing Data -', end='\r', flush=True)
+        time.sleep(1)
+        print('Parsing Data \\', end='\r', flush=True)
+        time.sleep(1)
+        print('Parsing Data |', end='\r', flush=True)
+        time.sleep(1)
+        print('Parsing Data /', end='\r', flush=True)
+        time.sleep(1)
+        if not t2.isAlive():
+            print("Search Complete")
+            break
 
 
 def main():
@@ -166,15 +207,12 @@ def main():
     # Creates RedditPy object with argparse number of saved links to look through
     r = RedditPy(args.number)
     
-    # Creates list from saved list that matched a string
-    if args.search != None:
-        hit_list = []                       # List for match search strings
-        for i in args.search:               # Loops through arguments for strings to match on
-            for j in r.saved_list:          # Loops through saved list
-                if i in j[1]:               # If string matches in title of saved list
-                    hit_list.append(j)      # Append to hit_list
+    # Multithreading
+    t1 = threading.Thread(target=thread_loop, args=(args.search, r), name='t1')
+    
+    t1.start()
+    t1.join()
 
-    write_html(hit_list)
 
 if __name__ == '__main__':
     main()
