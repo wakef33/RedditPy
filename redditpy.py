@@ -154,6 +154,8 @@ def parse_saves(args_search, r):
                 if i in j[1]:               # If string matches in title of saved list
                     hit_list.append(j)      # Append to hit_list
         write_html(hit_list)
+    else:
+        write_html(r.saved_list)
 
 
 def write_html(search_list):
