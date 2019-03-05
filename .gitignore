@@ -4,6 +4,9 @@ redditpy.conf
 # Ignores redditpy.html
 redditpy.html
 
+# Ignore swap files
+*.swp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
