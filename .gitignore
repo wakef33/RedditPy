@@ -1,3 +1,9 @@
+# Ignores redditpy.conf which has passwords in it
+redditpy.conf
+
+# Ignores redditpy.html
+redditpy.html
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
