@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 '''
-Quickly gets various information from
-Reddit account.
+RedditPy downloads user's saved
+links and allows user to parse
+based on strings and/or subreddit.
 '''
 
 import os
@@ -12,6 +13,13 @@ import argparse
 
 __version__ = 'RedditPy 0.8.0'
 
+# TODO
+# not require -s
+# Search by subreddit
+# Auto open html file
+# Add -f to open config file
+# Add -w for where to write html file to
+# Fix login error handling
 
 class RedditPy():
     '''
@@ -59,7 +67,6 @@ class RedditPy():
                     password=reddit_password)
                 print("Logged In")
                 NotLoggedIn = False
-            # TODO: Fix error handling
             except praw.errors.InvalidUserPass:
                 print("Wrong username or password")
                 raise SystemExit()
@@ -77,11 +84,13 @@ class RedditPy():
         
         i = 0
         for link in saved_links:
+            subreddit = link.permalink[3:].split("/", 1)[0]
             temp_list = []
-            temp_list.append(i)                 # Appends ID
-            temp_list.append(link.title)        # Appends Title
-            temp_list.append(link.permalink)    # Appends Permalink
-            temp_list.append(link.url)          # Appends URL
+            temp_list.append(i)                 # Append ID
+            temp_list.append(link.title)        # Append Title
+            temp_list.append(link.permalink)    # Append Permalink
+            temp_list.append(link.url)          # Append URL
+            temp_list.append(subreddit)         # Append Subreddit
             self.saved_list.append(temp_list)   # Temp List to Actual List
             i = i + 1
     
@@ -155,7 +164,13 @@ def write_html(search_list):
     try:
         with open('redditpy.html', 'w') as open_html:
             for i in search_list:
-                open_html.write(str(i[0]) + ": <a href=https://www.reddit.com/" + i[2] + ">" +  i[1] + "</a> --- <a href=" + i[3] + ">Source</a><br />\n")
+                # i[0] = ID Number
+                # i[1] = Post Title
+                # i[2] = Permalink
+                # i[3] = URL
+                # i[4] = Subreddit
+                subreddit = i[2][3:].split("/")
+                open_html.write(str(i[0]) + ": " + i[4] + " --- <a href=https://www.reddit.com/" + i[2] + ">" +  i[1] + "</a> --- <a href=" + i[3] + ">Source</a><br />\n")
     except IOError:
         print('Error: Could not write to file')
         raise SystemExit()
