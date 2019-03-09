@@ -16,7 +16,6 @@ __version__ = 'RedditPy 0.9.0'
 # TODO
 # Better handle when no results are found
 # Auto open html file
-# Add -f to open config file
 # Add -w for where to write html file to
 # Fix login error handling
 
@@ -31,19 +30,19 @@ class RedditPy():
         self.reddit = None
     
     
-    def read_conf(self):
+    def read_conf(self, config):
         '''
         Get creds from conf file
         '''
         
         try:
-            with open('redditpy.conf') as open_conf:
+            with open(config) as open_conf:
                 # Creates a list of creds from conf file
                 for i in open_conf:
                     settings_list = i.strip().split('=')
                     self.conf_file.append(settings_list[1])
         except IOError:    # redditpy.conf file not found
-            print('Error: redditpy.conf not found')
+            print('Error: {} not found'.format(config))
             raise SystemExit()
         return self.conf_file
     
@@ -197,7 +196,7 @@ def write_html(search_list):
                 # i[3] = URL
                 # i[4] = Subreddit
                 subreddit = i[2][3:].split("/")
-                open_html.write(str(i[0]) + ": " + i[4] + " --- <a href=https://www.reddit.com/" + i[2] + ">" +  i[1] + "</a> --- <a href=" + i[3] + ">Source</a><br />\n")
+                open_html.write(str(i[0]) + ": {} --- <a href=https://www.reddit.com/{}>{}</a> --- <a href={}>Source</a><br />\n".format(i[4], i[2], i[1], i[3]))
     except IOError:
         print('Error: Could not write to file')
         raise SystemExit()
@@ -239,7 +238,8 @@ def main():
     parser = argparse.ArgumentParser(description='Presents information about Reddit user\'s saved links')
     parser.add_argument('-s', '--search', dest='search', help='Search for keyword in title', required=False, nargs='*', type=str)
     parser.add_argument('-r', '--subreddit', dest='subreddit', help='Search only specified subreddits', required=False, nargs='*', type=str)
-    parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=27, type=int)
+    parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=100, type=int)
+    parser.add_argument('-f', '--file', dest='config', help='Config file', required=False, nargs='?', default='redditpy.conf', type=str)
     parser.add_argument('-c', '--clean', dest='clean', help='Removes redditpy.html file', required=False, action='store_true')
     parser.add_argument('-v', '--version', dest='version', help='Prints version number', required=False, action='store_true')
     args = parser.parse_args()
@@ -261,7 +261,7 @@ def main():
     
     # Creates RedditPy object
     r = RedditPy()
-    r.read_conf()
+    r.read_conf(args.config)
     r.login(r.conf_file[0], r.conf_file[1], r.conf_file[2], r.conf_file[3], r.conf_file[4])
     
     # Multithreading Download
