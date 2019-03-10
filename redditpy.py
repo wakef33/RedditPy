@@ -11,11 +11,8 @@ import praw
 import threading
 import argparse
 
-__version__ = 'RedditPy 0.9.2'
+__version__ = 'RedditPy 0.9.9'
 
-# TODO
-# Auto open html file
-# Fix login error handling
 
 class RedditPy():
     '''
@@ -50,9 +47,9 @@ class RedditPy():
         Logs into account
         '''
         
-        # Try to login or sleep/wait until logged in, or exit if user/pass wrong
-        NotLoggedIn = True
-        while NotLoggedIn:
+        # Try to login using information in config file
+        login_attempt = True
+        while login_attempt:
             print("Logging In...")
             try:
                 self.reddit = praw.Reddit(
@@ -62,14 +59,34 @@ class RedditPy():
                     username=reddit_username,
                     password=reddit_password)
                 print("Logged In")
-                NotLoggedIn = False
-            except praw.errors.InvalidUserPass:
+                login_attempt = False
+            except:
                 print("Wrong username or password")
                 raise SystemExit()
-            except Exception as err:
-                print(err)
-                print("Unknown Error")
-                raise SystemExit()
+    
+    
+    def thread_loop(self, args_number):
+        '''
+        Creates threads to indicate the
+        process is still parsing data
+        '''
+        
+        args_number_list = [args_number]
+        t1 = threading.Thread(target=self.download_saves, args=(args_number_list), name='t1')
+        t1.start()
+        
+        while True:
+            print('Downloading -', end='\r', flush=True)
+            time.sleep(0.3)
+            print('Downloading \\', end='\r', flush=True)
+            time.sleep(0.3)
+            print('Downloading |', end='\r', flush=True)
+            time.sleep(0.3)
+            print('Downloading /', end='\r', flush=True)
+            time.sleep(0.3)
+            if not t1.isAlive():
+                print("Complete     ")
+                break
     
     
     def download_saves(self, number_links):
@@ -77,7 +94,6 @@ class RedditPy():
         Downloads saved links from Reddit
         '''
         
-        print("Grabbing Saved Links...")
         saved_links = self.reddit.user.me().saved(limit=number_links)    # Gets list of user's saved links
         
         i = 0
@@ -91,95 +107,69 @@ class RedditPy():
             temp_list.append(subreddit)         # Append Subreddit
             self.saved_list.append(temp_list)   # Temp List to Actual List
             i = i + 1
-
-
-def parse_saves(args_search, r, args_subreddit, html_file):
-    '''
-    Creates list from saved
-    list that matched a string
-    '''
     
-    print("Parsing Saved Links...")
     
-    # Search for Subreddit and Title
-    if (args_search != None) and (args_subreddit != None):
-        hit_list_1 = []                     # List for matched subreddits
-        for i in args_subreddit:            # Loops through arguments for subreddits to match on
-            for j in r.saved_list:          # Loops through saved list
-                if i in j[4]:               # If string matches subreddit in saved list
-                    hit_list_1.append(j)    # Append to hit_list_1
-        hit_list_2 = []                     # List for match search strings
-        for i in args_search:               # Loops through arguments for strings to match on
-            for j in hit_list_1:            # Loops through hit_list_1
-                if i in j[1]:               # If string matches in title found in hit_list_1
-                    hit_list_2.append(j)
-        write_html(hit_list_2, html_file)
-    # Search for Title Only
-    elif (args_search != None) and (args_subreddit == None):
-        hit_list = []                       # List for match search strings
-        for i in args_search:               # Loops through arguments for strings to match on
-            for j in r.saved_list:          # Loops through saved list
-                if i in j[1]:               # If string matches in title of saved list
-                    hit_list.append(j)      # Append to hit_list
-        write_html(hit_list, html_file)
-    # Search for Subreddit Only
-    elif (args_search == None) and (args_subreddit != None):
-        hit_list = []                       # List for match subreddits
-        for i in args_subreddit:            # Loops through arguments for subreddit to match on
-            for j in r.saved_list:          # Loops through saved list
-                if i in j[4]:               # If string matches subreddit in saved list
-                    hit_list.append(j)      # Append to hit_list
-        write_html(hit_list, html_file)
-    # Write Everything
-    else:
-        write_html(r.saved_list, html_file)
-
-
-def write_html(search_list, html_file):
-    '''
-    Creates html file for viewing
-    '''
+    def parse_saves(self, args_search, args_subreddit, html_file):
+        '''
+        Creates list from saved
+        list that matched a string
+        '''
+        
+        # Search for Subreddit and Title
+        if (args_search != None) and (args_subreddit != None):
+            hit_list_1 = []                     # List for matched subreddits
+            for i in args_subreddit:            # Loops through arguments for subreddits to match on
+                for j in self.saved_list:       # Loops through saved list
+                    if i in j[4]:               # If string matches subreddit in saved list
+                        hit_list_1.append(j)    # Append to hit_list_1
+            hit_list_2 = []                     # List for match search strings
+            for i in args_search:               # Loops through arguments for strings to match on
+                for j in hit_list_1:            # Loops through hit_list_1
+                    if i in j[1]:               # If string matches in title found in hit_list_1
+                        hit_list_2.append(j)
+            self.write_html(hit_list_2, html_file)
+        # Search for Title Only
+        elif (args_search != None) and (args_subreddit == None):
+            hit_list = []                       # List for match search strings
+            for i in args_search:               # Loops through arguments for strings to match on
+                for j in self.saved_list:       # Loops through saved list
+                    if i in j[1]:               # If string matches in title of saved list
+                        hit_list.append(j)      # Append to hit_list
+            self.write_html(hit_list, html_file)
+        # Search for Subreddit Only
+        elif (args_search == None) and (args_subreddit != None):
+            hit_list = []                       # List for match subreddits
+            for i in args_subreddit:            # Loops through arguments for subreddit to match on
+                for j in self.saved_list:       # Loops through saved list
+                    if i in j[4]:               # If string matches subreddit in saved list
+                        hit_list.append(j)      # Append to hit_list
+            self.write_html(hit_list, html_file)
+        # Write Everything
+        else:
+            self.write_html(self.saved_list, html_file)
     
-    if len(search_list) == 0:
-        print("No Matches")
-        raise SystemExit()
-    try:
-        with open(html_file, 'w') as open_html:
-            for i in search_list:
-                # i[0] = ID Number
-                # i[1] = Post Title
-                # i[2] = Permalink
-                # i[3] = URL
-                # i[4] = Subreddit
-                subreddit = i[2][3:].split("/")
-                open_html.write(str(i[0]) + ": {} --- <a href=https://www.reddit.com/{}>{}</a> --- <a href={}>Source</a><br />\n".format(i[4], i[2], i[1], i[3]))
-    except IOError:
-        print('Error: Could not write to file')
-        raise SystemExit()
-
-
-def thread_loop(r, args_number):
-    '''
-    Creates threads to indicate the
-    process is still parsing data
-    '''
     
-    args_number_list = [args_number]
-    t2 = threading.Thread(target=r.download_saves, args=(args_number_list), name='t2')
-    t2.start()
-    
-    while True:
-        print('Running -', end='\r', flush=True)
-        time.sleep(0.3)
-        print('Running \\', end='\r', flush=True)
-        time.sleep(0.3)
-        print('Running |', end='\r', flush=True)
-        time.sleep(0.3)
-        print('Running /', end='\r', flush=True)
-        time.sleep(0.3)
-        if not t2.isAlive():
-            print("Complete   ")
-            break
+    def write_html(self, search_list, html_file):
+        '''
+        Creates html file for viewing
+        '''
+        
+        if len(search_list) == 0:
+            print("No Matches")
+            raise SystemExit()
+        try:
+            with open(html_file, 'w') as open_html:
+                for i in search_list:
+                    # i[0] = ID Number
+                    # i[1] = Post Title
+                    # i[2] = Permalink
+                    # i[3] = URL
+                    # i[4] = Subreddit
+                    subreddit = i[2][3:].split("/")
+                    open_html.write(str(i[0]) + ": {} --- <a href=https://www.reddit.com/{}>{}</a> --- <a href={}>Source</a><br />\n".format(i[4], i[2], i[1], i[3]))
+        except IOError:
+            print('Error: Could not write to file')
+            raise SystemExit()
 
 
 def main():
@@ -212,18 +202,21 @@ def main():
             print("Error: Could not remove {}".format(args.write))
             raise SystemExit()
     
+    # Checks if args.number > 1000
+    if args.number > 1000:
+        print("Reddit caps at 1000. Searching last 1000 saved links...")
+        args.number = 1000
+    
     # Creates RedditPy object
     r = RedditPy()
     r.read_conf(args.config)
     r.login(r.conf_file[0], r.conf_file[1], r.conf_file[2], r.conf_file[3], r.conf_file[4])
     
-    # Multithreading Download
-    t1 = threading.Thread(target=thread_loop, args=(r, args.number), name='t1')
-    t1.start()
-    t1.join()
+    # Multi-threaded Download
+    r.thread_loop(args.number)
     
     # Parse Saved Links
-    parse_saves(args.search, r, args.subreddit, args.write)
+    r.parse_saves(args.search, args.subreddit, args.write)
 
 
 if __name__ == '__main__':
