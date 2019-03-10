@@ -15,7 +15,6 @@ __version__ = 'RedditPy 0.9.2'
 
 # TODO
 # Auto open html file
-# Imporve -c option
 # Fix login error handling
 
 class RedditPy():
@@ -69,6 +68,8 @@ class RedditPy():
                 raise SystemExit()
             except Exception as err:
                 print(err)
+                print("Unknown Error")
+                raise SystemExit()
     
     
     def download_saves(self, number_links):
@@ -90,50 +91,6 @@ class RedditPy():
             temp_list.append(subreddit)         # Append Subreddit
             self.saved_list.append(temp_list)   # Temp List to Actual List
             i = i + 1
-    
-    
-    def get_id(self):
-        '''
-        Gets ids of saved links
-        '''
-        
-        id_list = []
-        for id_number in self.saved_list:
-            id_list.append(id_number[0])
-        return id_list
-    
-    
-    def get_title(self):
-        '''
-        Gets titles of saved links
-        '''
-        
-        title_list = []
-        for title in self.saved_list:
-            title_list.append(title[1])
-        return title_list
-    
-    
-    def get_permalink(self):
-        '''
-        Gets permalinks of saved links
-        '''
-        
-        permalink_list = []
-        for permalink in self.saved_list:
-            permalink_list.append(permalink[2])
-        return permalink_list
-    
-    
-    def get_url(self):
-        '''
-        Gets urls of saved links
-        '''
-        
-        url_list = []
-        for url in self.saved_list:
-            url_list.append(url[3])
-        return url_list
 
 
 def parse_saves(args_search, r, args_subreddit, html_file):
@@ -201,19 +158,15 @@ def write_html(search_list, html_file):
         raise SystemExit()
 
 
-def thread_loop(args_search, r, thread_check, args_number, args_subreddit, html_file):
+def thread_loop(r, args_number):
     '''
     Creates threads to indicate the
     process is still parsing data
     '''
     
-    if thread_check == 'Download':
-        args_number_list = [args_number]
-        t2 = threading.Thread(target=r.download_saves, args=(args_number_list), name='t2')
-        t2.start()
-    elif thread_check == 'Parse':
-        t2 = threading.Thread(target=parse_saves, args=(args_search, r, args_subreddit, html_file), name='t2')
-        t2.start()
+    args_number_list = [args_number]
+    t2 = threading.Thread(target=r.download_saves, args=(args_number_list), name='t2')
+    t2.start()
     
     while True:
         print('Running -', end='\r', flush=True)
@@ -239,8 +192,8 @@ def main():
     parser.add_argument('-r', '--subreddit', dest='subreddit', help='Search only specified subreddits', required=False, nargs='*', type=str)
     parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=100, type=int)
     parser.add_argument('-f', '--file', dest='config', help='Config file', required=False, nargs='?', default='redditpy.conf', type=str)
-    parser.add_argument('-w', '--write', dest='write', help='Write html file to', required=False, nargs='?', default='redditpy.html', type=str)
-    parser.add_argument('-c', '--clean', dest='clean', help='Removes redditpy.html file', required=False, action='store_true')
+    parser.add_argument('-w', '--write', dest='write', help='Write html file to location', required=False, nargs='?', default='redditpy.html', type=str)
+    parser.add_argument('-c', '--clean', dest='clean', help='Removes html file. Use with \'-w\' to specify html file', required=False, action='store_true')
     parser.add_argument('-v', '--version', dest='version', help='Prints version number', required=False, action='store_true')
     args = parser.parse_args()
     
@@ -265,14 +218,12 @@ def main():
     r.login(r.conf_file[0], r.conf_file[1], r.conf_file[2], r.conf_file[3], r.conf_file[4])
     
     # Multithreading Download
-    t1 = threading.Thread(target=thread_loop, args=(args.search, r, 'Download', args.number, args.subreddit, args.write), name='t1')
+    t1 = threading.Thread(target=thread_loop, args=(r, args.number), name='t1')
     t1.start()
     t1.join()
     
-    # Multithreading Parse
-    t1 = threading.Thread(target=thread_loop, args=(args.search, r, 'Parse', args.number, args.subreddit, args.write), name='t1')
-    t1.start()
-    t1.join()
+    # Parse Saved Links
+    parse_saves(args.search, r, args.subreddit, args.write)
 
 
 if __name__ == '__main__':
