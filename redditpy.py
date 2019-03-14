@@ -19,9 +19,12 @@ class RedditPy():
     Creates a list of saved links
     '''
     
-    def __init__(self):
+    def __init__(self, read_file, search_number, backup):
         self.conf_file = []
         self.saved_list = []
+        self.read_file = read_file
+        self.search_number = search_number
+        self.backup = backup
         self.reddit = None
     
     
@@ -65,14 +68,13 @@ class RedditPy():
                 raise SystemExit()
     
     
-    def thread_loop(self, args_number):
+    def thread_loop(self):
         '''
         Creates threads to indicate the
         process is still parsing data
         '''
         
-        args_number_list = [args_number]
-        t1 = threading.Thread(target=self.download_saves, args=(args_number_list), name='t1')
+        t1 = threading.Thread(target=self.download_saves, name='t1')
         t1.start()
         
         while True:
@@ -89,12 +91,20 @@ class RedditPy():
                 break
     
     
-    def download_saves(self, number_links):
+    def download_saves(self):
         '''
         Downloads saved links from Reddit
         '''
         
-        saved_links = self.reddit.user.me().saved(limit=number_links)    # Gets list of user's saved links
+        saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
+        
+        if self.backup != False:
+            try:
+                with open('redditpy.bak', 'a') as write_backup:
+                    for i in saved_links:
+                        write_backup.write(str(i) + '\n')
+            except IOError:
+                print('Error: Could not write to file')
         
         i = 0
         for link in saved_links:
@@ -107,6 +117,24 @@ class RedditPy():
             temp_list.append(subreddit)         # Append Subreddit
             self.saved_list.append(temp_list)   # Temp List to Actual List
             i = i + 1
+        
+        # if reading from backup file
+        if self.read_file != False:
+            try:
+                with open('redditpy.bak') as open_local:
+                    for link in open_local:
+                        submission = self.reddit.submission(id=link)
+                        subreddit = submission.permalink[3:].split("/", 1)[0]
+                        temp_list = []
+                        temp_list.append(i)                     # Append ID
+                        temp_list.append(submission.title)      # Append Title
+                        temp_list.append(submission.permalink)  # Append Permalink
+                        temp_list.append(submission.url)        # Append URL
+                        temp_list.append(subreddit)             # Append Subreddit
+                        self.saved_list.append(temp_list)       # Temp List to Actual List
+                        i = i + 1
+            except IOError:
+                print('Error: Could not read file')
     
     
     def parse_saves(self, args_search, args_subreddit, html_file):
@@ -183,6 +211,8 @@ def main():
     parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=100, type=int)
     parser.add_argument('-f', '--file', dest='config', help='Config file', required=False, nargs='?', default='redditpy.conf', type=str)
     parser.add_argument('-w', '--write', dest='write', help='Write html file to location', required=False, nargs='?', default='redditpy.html', type=str)
+    parser.add_argument('-l', '--local', dest='read', help='Read saved file list', required=False, action='store_true')
+    parser.add_argument('-b', '--backup', dest='backup', help='Backup saved links', required=False, action='store_true')
     parser.add_argument('-c', '--clean', dest='clean', help='Removes html file. Use with \'-w\' to specify html file', required=False, action='store_true')
     parser.add_argument('-v', '--version', dest='version', help='Prints version number', required=False, action='store_true')
     args = parser.parse_args()
@@ -208,12 +238,12 @@ def main():
         args.number = 1000
     
     # Creates RedditPy object
-    r = RedditPy()
+    r = RedditPy(args.read, args.number, args.backup)
     r.read_conf(args.config)
     r.login(r.conf_file[0], r.conf_file[1], r.conf_file[2], r.conf_file[3], r.conf_file[4])
     
     # Multi-threaded Download
-    r.thread_loop(args.number)
+    r.thread_loop()
     
     # Parse Saved Links
     r.parse_saves(args.search, args.subreddit, args.write)
