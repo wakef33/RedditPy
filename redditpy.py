@@ -10,6 +10,7 @@ import time
 import praw
 import threading
 import argparse
+import pickle
 
 __version__ = 'RedditPy 0.9.9'
 
@@ -100,9 +101,10 @@ class RedditPy():
         
         if self.backup != False:
             try:
-                with open('redditpy.bak', 'a') as write_backup:
-                    for i in saved_links:
-                        write_backup.write(str(i) + '\n')
+                with open('redditpy.bak', 'ab') as write_backup:
+                    pickle.dump(saved_links, write_backup)
+                    #for i in saved_links:
+                    #    write_backup.write(str(i) + '\n')
             except IOError:
                 print('Error: Could not write to file')
         
@@ -121,17 +123,17 @@ class RedditPy():
         # if reading from backup file
         if self.read_file != False:
             try:
-                with open('redditpy.bak') as open_local:
-                    for link in open_local:
-                        submission = self.reddit.submission(id=link)
-                        subreddit = submission.permalink[3:].split("/", 1)[0]
+                with open('redditpy.bak', 'rb') as open_local:
+                    pickle_file = pickle.load(open_local)
+                    for link in pickle_file:
+                        subreddit = link.permalink[3:].split("/", 1)[0]
                         temp_list = []
-                        temp_list.append(i)                     # Append ID
-                        temp_list.append(submission.title)      # Append Title
-                        temp_list.append(submission.permalink)  # Append Permalink
-                        temp_list.append(submission.url)        # Append URL
-                        temp_list.append(subreddit)             # Append Subreddit
-                        self.saved_list.append(temp_list)       # Temp List to Actual List
+                        temp_list.append(i)                 # Append ID
+                        temp_list.append(link.title)        # Append Title
+                        temp_list.append(link.permalink)    # Append Permalink
+                        temp_list.append(link.url)          # Append URL
+                        temp_list.append(subreddit)         # Append Subreddit
+                        self.saved_list.append(temp_list)   # Temp List to Actual List
                         i = i + 1
             except IOError:
                 print('Error: Could not read file')
@@ -206,15 +208,51 @@ def main():
     '''
     
     parser = argparse.ArgumentParser(description='Parses Reddit user\'s saved links')
-    parser.add_argument('-s', '--search', dest='search', help='Search for keyword in title', required=False, nargs='*', type=str)
-    parser.add_argument('-r', '--subreddit', dest='subreddit', help='Search only specified subreddits', required=False, nargs='*', type=str)
-    parser.add_argument('-n', '--number', dest='number', help='Number of save links to search through', required=False, nargs='?', default=100, type=int)
-    parser.add_argument('-f', '--file', dest='config', help='Config file', required=False, nargs='?', default='redditpy.conf', type=str)
-    parser.add_argument('-w', '--write', dest='write', help='Write html file to location', required=False, nargs='?', default='redditpy.html', type=str)
-    parser.add_argument('-l', '--local', dest='read', help='Read saved file list', required=False, action='store_true')
-    parser.add_argument('-b', '--backup', dest='backup', help='Backup saved links', required=False, action='store_true')
-    parser.add_argument('-c', '--clean', dest='clean', help='Removes html file. Use with \'-w\' to specify html file', required=False, action='store_true')
-    parser.add_argument('-v', '--version', dest='version', help='Prints version number', required=False, action='store_true')
+    parser.add_argument(
+            '-s', '--search',
+            dest='search',
+            help='Search for keyword in title',
+            required=False, nargs='*', type=str)
+    parser.add_argument(
+            '-r', '--subreddit',
+            dest='subreddit',
+            help='Search only specified subreddits',
+            required=False, nargs='*', type=str)
+    parser.add_argument(
+            '-n', '--number',
+            dest='number',
+            help='Number of save links to search through',
+            required=False, nargs='?', default=100, type=int)
+    parser.add_argument(
+            '-f', '--file',
+            dest='config',
+            help='Config file',
+            required=False, nargs='?', default='redditpy.conf', type=str)
+    parser.add_argument(
+            '-w', '--write',
+            dest='write',
+            help='Write html file to location',
+            required=False, nargs='?', default='redditpy.html', type=str)
+    parser.add_argument(
+            '-l', '--local',
+            dest='read',
+            help='Read saved file list',
+            required=False, action='store_true')
+    parser.add_argument(
+            '-b', '--backup',
+            dest='backup',
+            help='Backup saved links',
+            required=False, action='store_true')
+    parser.add_argument(
+            '-c', '--clean',
+            dest='clean',
+            help='Removes html file. Use with \'-w\' to specify html file',
+            required=False, action='store_true')
+    parser.add_argument(
+            '-v', '--version',
+            dest='version',
+            help='Prints version number',
+            required=False, action='store_true')
     args = parser.parse_args()
     
     # Prints version then exits
