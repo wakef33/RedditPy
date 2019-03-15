@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 '''
 RedditPy downloads user's saved
-links and allows user to parse
+links and allows user to parse/backup
 based on strings and/or subreddit.
 '''
 
@@ -43,7 +43,6 @@ class RedditPy():
         except IOError:    # redditpy.conf file not found
             print('Error: {} not found'.format(config))
             raise SystemExit()
-        return self.conf_file
     
     
     def login(self, reddit_user_agent, reddit_client_id, reddit_client_secret, reddit_username, reddit_password):
@@ -103,8 +102,6 @@ class RedditPy():
             try:
                 with open('redditpy.bak', 'ab') as write_backup:
                     pickle.dump(saved_links, write_backup)
-                    #for i in saved_links:
-                    #    write_backup.write(str(i) + '\n')
             except IOError:
                 print('Error: Could not write to file')
         
@@ -214,7 +211,7 @@ def main():
             help='Search for keyword in title',
             required=False, nargs='*', type=str)
     parser.add_argument(
-            '-r', '--subreddit',
+            '-S', '--subreddit',
             dest='subreddit',
             help='Search only specified subreddits',
             required=False, nargs='*', type=str)
@@ -224,9 +221,9 @@ def main():
             help='Number of save links to search through',
             required=False, nargs='?', default=100, type=int)
     parser.add_argument(
-            '-f', '--file',
+            '-c', '--config',
             dest='config',
-            help='Config file',
+            help='Config file to read from',
             required=False, nargs='?', default='redditpy.conf', type=str)
     parser.add_argument(
             '-w', '--write',
@@ -234,24 +231,19 @@ def main():
             help='Write html file to location',
             required=False, nargs='?', default='redditpy.html', type=str)
     parser.add_argument(
-            '-l', '--local',
+            '-r', '--read',
             dest='read',
-            help='Read saved file list',
+            help='Read from backup file',
             required=False, action='store_true')
     parser.add_argument(
             '-b', '--backup',
             dest='backup',
-            help='Backup saved links',
-            required=False, action='store_true')
-    parser.add_argument(
-            '-c', '--clean',
-            dest='clean',
-            help='Removes html file. Use with \'-w\' to specify html file',
+            help='Backup saved links to location',
             required=False, action='store_true')
     parser.add_argument(
             '-v', '--version',
             dest='version',
-            help='Prints version number',
+            help='Print version number',
             required=False, action='store_true')
     args = parser.parse_args()
     
@@ -259,16 +251,6 @@ def main():
     if args.version:
         print(__version__)
         raise SystemExit()
-    
-    # Removes html file
-    if args.clean:
-        try:
-            os.remove(args.write)
-            print("Removed {}".format(args.write))
-            raise SystemExit()
-        except IOError:
-            print("Error: Could not remove {}".format(args.write))
-            raise SystemExit()
     
     # Checks if args.number > 1000
     if args.number > 1000:
