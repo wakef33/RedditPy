@@ -20,12 +20,15 @@ class RedditPy():
     Creates a list of saved links
     '''
     
-    def __init__(self, read_file, search_number, backup):
+    def __init__(self, read_file, search_number):
+        '''
+        Initialize a RedditPy instance.
+        '''
+        
         self.conf_file = []
         self.saved_list = []
         self.read_file = read_file
         self.search_number = search_number
-        self.backup = backup
         self.reddit = None
     
     
@@ -41,11 +44,10 @@ class RedditPy():
                     settings_list = i.strip().split('=')
                     self.conf_file.append(settings_list[1])
         except IOError:    # redditpy.conf file not found
-            print('Error: {} not found'.format(config))
-            raise SystemExit()
+            raise SystemExit('Error: {} not found'.format(config))
     
     
-    def login(self, reddit_user_agent, reddit_client_id, reddit_client_secret, reddit_username, reddit_password):
+    def login(self):
         '''
         Logs into account
         '''
@@ -56,16 +58,33 @@ class RedditPy():
             print("Logging In...")
             try:
                 self.reddit = praw.Reddit(
-                    user_agent=reddit_user_agent,
-                    client_id=reddit_client_id,
-                    client_secret=reddit_client_secret,
-                    username=reddit_username,
-                    password=reddit_password)
+                    user_agent=self.conf_file[0],
+                    client_id=self.conf_file[1],
+                    client_secret=self.conf_file[2],
+                    username=self.conf_file[3],
+                    password=self.conf_file[4])
                 print("Logged In")
                 login_attempt = False
             except:
-                print("Wrong username or password")
+                raise SystemExit("Wrong username or password")
+    
+    
+    def backup(self, backup_file):
+        '''
+        Backup saved links to file
+        
+        :param backup_file: blah
+        '''
+        
+        saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
+        
+        try:
+            with open(backup_file, 'ab') as write_backup:
+                pickle.dump(saved_links, write_backup)
+                print("Saved links backed up to {}".format(backup_file))
                 raise SystemExit()
+        except IOError:
+            raise SystemExit('Error: Could not write to {}'.format(backup_file))
     
     
     def thread_loop(self):
@@ -98,13 +117,6 @@ class RedditPy():
         
         saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
         
-        if self.backup != False:
-            try:
-                with open('redditpy.bak', 'ab') as write_backup:
-                    pickle.dump(saved_links, write_backup)
-            except IOError:
-                print('Error: Could not write to file')
-        
         i = 0
         for link in saved_links:
             subreddit = link.permalink[3:].split("/", 1)[0]
@@ -118,9 +130,9 @@ class RedditPy():
             i = i + 1
         
         # if reading from backup file
-        if self.read_file != False:
+        if self.read_file != None:
             try:
-                with open('redditpy.bak', 'rb') as open_local:
+                with open(self.read_file, 'rb') as open_local:
                     pickle_file = pickle.load(open_local)
                     for link in pickle_file:
                         subreddit = link.permalink[3:].split("/", 1)[0]
@@ -133,7 +145,7 @@ class RedditPy():
                         self.saved_list.append(temp_list)   # Temp List to Actual List
                         i = i + 1
             except IOError:
-                print('Error: Could not read file')
+                print('Error: Could not read {}'.format(self.read_file))
     
     
     def parse_saves(self, args_search, args_subreddit, html_file):
@@ -182,8 +194,7 @@ class RedditPy():
         '''
         
         if len(search_list) == 0:
-            print("No Matches")
-            raise SystemExit()
+            raise SystemExit("No Matches")
         try:
             with open(html_file, 'w') as open_html:
                 for i in search_list:
@@ -195,8 +206,7 @@ class RedditPy():
                     subreddit = i[2][3:].split("/")
                     open_html.write(str(i[0]) + ": {} --- <a href=https://www.reddit.com/{}>{}</a> --- <a href={}>Source</a><br />\n".format(i[4], i[2], i[1], i[3]))
         except IOError:
-            print('Error: Could not write to file')
-            raise SystemExit()
+            raise SystemExit("Error: Could not write to {}".format(html_file))
 
 
 def main():
@@ -204,7 +214,7 @@ def main():
     Starts main program
     '''
     
-    parser = argparse.ArgumentParser(description='Parses Reddit user\'s saved links')
+    parser = argparse.ArgumentParser(description='RedditPy downloads user\'s saved links and allows user to parse/backup based on strings and/or subreddit.')
     parser.add_argument(
             '-s', '--search',
             dest='search',
@@ -234,12 +244,12 @@ def main():
             '-r', '--read',
             dest='read',
             help='Read from backup file',
-            required=False, action='store_true')
+            required=False, nargs='?', const='redditpy.bak', type=str)
     parser.add_argument(
             '-b', '--backup',
             dest='backup',
             help='Backup saved links to location',
-            required=False, action='store_true')
+            required=False, nargs='?', const='redditpy.bak', type=str)
     parser.add_argument(
             '-v', '--version',
             dest='version',
@@ -258,9 +268,13 @@ def main():
         args.number = 1000
     
     # Creates RedditPy object
-    r = RedditPy(args.read, args.number, args.backup)
+    r = RedditPy(args.read, args.number)
     r.read_conf(args.config)
-    r.login(r.conf_file[0], r.conf_file[1], r.conf_file[2], r.conf_file[3], r.conf_file[4])
+    r.login()
+    
+    # Backup saved links if requested
+    if args.backup != None:
+        r.backup(args.backup)
     
     # Multi-threaded Download
     r.thread_loop()
