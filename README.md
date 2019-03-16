@@ -11,14 +11,17 @@ RedditPy was built using Python 3.7.2 and praw 6.1.1.
 pip3 install praw
 ```
 
-## Example
+## Usage
 
-```python
-usage: redditpy.py [-h] [-s [SEARCH [SEARCH ...]]]
-                   [-S [SUBREDDIT [SUBREDDIT ...]]] [-n [NUMBER]]
-                   [-c [CONFIG]] [-w [WRITE]] [-r [READ]] [-b [BACKUP]] [-v]
+Example:
 
-optional arguments:
+```
+./reddit.py -n 500 -S LearnPython -s praw
+```
+
+Options:
+
+```
   -h, --help            show this help message and exit
   -s [SEARCH [SEARCH ...]], --search [SEARCH [SEARCH ...]]
                         Search for keyword in title.
@@ -38,7 +41,4 @@ optional arguments:
                         Backup saved links to specific location. Default
                         redditpy.bak.
   -v, --version         Print version number
-
-
-./reddit.py -n 500 -S LearnPython -s praw
 ```
