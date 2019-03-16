@@ -12,17 +12,21 @@ import threading
 import argparse
 import pickle
 
-__version__ = 'RedditPy 0.9.9'
+__version__ = 'RedditPy 1.0.0'
 
 
 class RedditPy():
     '''
-    Creates a list of saved links
+    Creates a list of saved links from Reddit
+    user's account. Methods to parse/save links.
     '''
     
     def __init__(self, read_file, search_number):
         '''
         Initialize a RedditPy instance.
+
+        :param read_file: Backup file to read from. Default redditpy.bak.
+        :param search_number: Number of saved links to parse through.
         '''
         
         self.conf_file = []
@@ -34,7 +38,9 @@ class RedditPy():
     
     def read_conf(self, config):
         '''
-        Get creds from conf file
+        Gets creds from RedditPy config file.
+
+        :param config: The location of the configuration file. Default redditpy.conf.
         '''
         
         try:
@@ -49,7 +55,7 @@ class RedditPy():
     
     def login(self):
         '''
-        Logs into account
+        Logs into user's Reddit account using praw.
         '''
         
         # Try to login using information in config file
@@ -71,9 +77,9 @@ class RedditPy():
     
     def backup(self, backup_file):
         '''
-        Backup saved links to file
+        Backup saved links to a file using a pickle.
         
-        :param backup_file: blah
+        :param backup_file: The location to backup the saved links to. Default redditpy.bak.
         '''
         
         saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
@@ -89,8 +95,8 @@ class RedditPy():
     
     def thread_loop(self):
         '''
-        Creates threads to indicate the
-        process is still parsing data
+        Creates a new thread to indicate to the user that
+        the download is still occuring. Calls download_save method.
         '''
         
         t1 = threading.Thread(target=self.download_saves, name='t1')
@@ -112,7 +118,7 @@ class RedditPy():
     
     def download_saves(self):
         '''
-        Downloads saved links from Reddit
+        Downloads saved links from user's Reddit account using praw.
         '''
         
         saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
@@ -150,8 +156,11 @@ class RedditPy():
     
     def parse_saves(self, args_search, args_subreddit, html_file):
         '''
-        Creates list from saved
-        list that matched a string
+        Creates a list from user's saved links that matched a string.
+
+        :param args_search: String to match against Reddit post title.
+        :param args_subreddit: String to match against Reddit subreddit.
+        :param html_file: Location to save the html file to. Object is passed to write_html(). Default redditpy.html.
         '''
         
         # Search for Subreddit and Title
@@ -190,7 +199,10 @@ class RedditPy():
     
     def write_html(self, search_list, html_file):
         '''
-        Creates html file for viewing
+        Creates html file to easily view with a web browser.
+
+        :param search_list: The list that matched against parse_saves().
+        :param html_file: Location to save the html file to. Default redditpy.html.
         '''
         
         if len(search_list) == 0:
@@ -211,44 +223,44 @@ class RedditPy():
 
 def main():
     '''
-    Starts main program
+    Starts main program.
     '''
     
     parser = argparse.ArgumentParser(description='RedditPy downloads user\'s saved links and allows user to parse/backup based on strings and/or subreddit.')
     parser.add_argument(
             '-s', '--search',
             dest='search',
-            help='Search for keyword in title',
+            help='Search for keyword in title.',
             required=False, nargs='*', type=str)
     parser.add_argument(
             '-S', '--subreddit',
             dest='subreddit',
-            help='Search only specified subreddits',
+            help='Search only specified subreddits.',
             required=False, nargs='*', type=str)
     parser.add_argument(
             '-n', '--number',
             dest='number',
-            help='Number of save links to search through',
+            help='Number of save links to parse through. Default 100 links.',
             required=False, nargs='?', default=100, type=int)
     parser.add_argument(
             '-c', '--config',
             dest='config',
-            help='Config file to read from',
+            help='Config file to read from. Default redditpy.conf.',
             required=False, nargs='?', default='redditpy.conf', type=str)
     parser.add_argument(
             '-w', '--write',
             dest='write',
-            help='Write html file to location',
+            help='Write html file to specific location. Default redditpy.html.',
             required=False, nargs='?', default='redditpy.html', type=str)
     parser.add_argument(
             '-r', '--read',
             dest='read',
-            help='Read from backup file',
+            help='Read from backup file. Default redditpy.bak.',
             required=False, nargs='?', const='redditpy.bak', type=str)
     parser.add_argument(
             '-b', '--backup',
             dest='backup',
-            help='Backup saved links to location',
+            help='Backup saved links to specific location. Default redditpy.bak.',
             required=False, nargs='?', const='redditpy.bak', type=str)
     parser.add_argument(
             '-v', '--version',
