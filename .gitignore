@@ -4,6 +4,9 @@ redditpy.conf
 # Ignores redditpy.html
 redditpy.html
 
+# Ignores redditpy.bak
+redditpy.bak
+
 # Ignore swap files
 *.swp
 
