@@ -24,7 +24,7 @@ Needed to fill information in redditpy.conf file.
 Example:
 
 ```
-./reddit.py -n 500 -S LearnPython -s praw
+./redditpy.py -n 500 -S LearnPython -s praw
 ```
 
 Options:
