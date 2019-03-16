@@ -11,6 +11,14 @@ RedditPy was built using Python 3.7.2 and praw 6.1.1.
 pip3 install praw
 ```
 
+Also requires that you create a Reddit app as a developer found at:
+
+```
+https://www.reddit.com/prefs/apps/
+```
+
+Needed to fill information in redditpy.conf file.
+
 ## Usage
 
 Example:
