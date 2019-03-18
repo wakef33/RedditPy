@@ -5,7 +5,7 @@ redditpy.conf
 redditpy.html
 
 # Ignores redditpy.bak
-redditpy.bak
+redditpy.bak*
 
 # Ignore swap files
 *.swp
