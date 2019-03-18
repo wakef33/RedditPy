@@ -21,10 +21,24 @@ Needed to fill information in redditpy.conf file.
 
 ## Usage
 
-Example:
+Examples:
+
+Search last 500 saved links in the subreddit "LearnPython" for "praw" or "reddit".
 
 ```
-./redditpy.py -n 500 -S LearnPython -s praw
+./redditpy.py -n 500 -S LearnPython -s praw reddit
+```
+
+Backup last 100 saved links.
+
+```
+./redditpy.py -n 100 -b
+```
+
+Search last 25 saved links and saved links in backup file.
+
+```
+./redditpy.py -n 25 -r
 ```
 
 Options:
