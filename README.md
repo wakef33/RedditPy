@@ -21,7 +21,7 @@ Needed to fill information in redditpy.conf file.
 
 ## Usage
 
-Examples:
+### Examples
 
 Search last 500 saved links in the subreddit "LearnPython" for "praw" or "reddit".
 
@@ -41,7 +41,7 @@ Search last 25 saved links and saved links in backup file.
 ./redditpy.py -n 25 -r
 ```
 
-Options:
+### Options
 
 ```
   -h, --help            show this help message and exit
