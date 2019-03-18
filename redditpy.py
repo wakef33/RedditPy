@@ -82,10 +82,28 @@ class RedditPy():
         :param backup_file: The location to backup the saved links to. Default redditpy.bak.
         '''
         
+        # Test if backup file already exists
+        file_test = False
+        file_test_warning = False
+        if os.path.isfile(backup_file) == True:
+            file_test = True
+            file_test_warning = True
+            file_test_number = 0
+        while file_test:
+            if os.path.isfile(backup_file + str(file_test_number)) == True:
+                file_test_number = file_test_number + 1
+            else:
+                file_test = False
+        
+        # If backup file exists, warns user and changes name
+        if file_test_warning == True:
+            backup_file = backup_file + str(file_test_number)
+            print("Backup file already exists. Creating {} instead.".format(backup_file))
+        
         saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
         
         try:
-            with open(backup_file, 'ab') as write_backup:
+            with open(backup_file, 'wb') as write_backup:
                 pickle.dump(saved_links, write_backup)
                 print("Saved links backed up to {}".format(backup_file))
                 raise SystemExit()
