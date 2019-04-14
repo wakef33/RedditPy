@@ -12,7 +12,7 @@ import threading
 import argparse
 import pickle
 
-__version__ = 'RedditPy 1.0.0'
+__version__ = 'RedditPy 1.1.0'
 
 
 class RedditPy():
@@ -100,11 +100,9 @@ class RedditPy():
             backup_file = backup_file + str(file_test_number)
             print("Backup file already exists. Creating {} instead.".format(backup_file))
         
-        saved_links = self.reddit.user.me().saved(limit=self.search_number)    # Gets list of user's saved links
-        
         try:
             with open(backup_file, 'wb') as write_backup:
-                pickle.dump(saved_links, write_backup)
+                pickle.dump(self.saved_list, write_backup)
                 print("Saved links backed up to {}".format(backup_file))
                 raise SystemExit()
         except IOError:
@@ -122,13 +120,13 @@ class RedditPy():
         
         while True:
             print('Downloading -', end='\r', flush=True)
-            time.sleep(0.3)
+            time.sleep(0.2)
             print('Downloading \\', end='\r', flush=True)
-            time.sleep(0.3)
+            time.sleep(0.2)
             print('Downloading |', end='\r', flush=True)
-            time.sleep(0.3)
+            time.sleep(0.2)
             print('Downloading /', end='\r', flush=True)
-            time.sleep(0.3)
+            time.sleep(0.2)
             if not t1.isAlive():
                 print("Complete     ")
                 break
@@ -151,23 +149,16 @@ class RedditPy():
             temp_list.append(link.url)          # Append URL
             temp_list.append(subreddit)         # Append Subreddit
             self.saved_list.append(temp_list)   # Temp List to Actual List
-            i = i + 1
+            i += 1
         
         # if reading from backup file
         if self.read_file != None:
             try:
                 with open(self.read_file, 'rb') as open_local:
                     pickle_file = pickle.load(open_local)
-                    for link in pickle_file:
-                        subreddit = link.permalink[3:].split("/", 1)[0]
-                        temp_list = []
-                        temp_list.append(i)                 # Append ID
-                        temp_list.append(link.title)        # Append Title
-                        temp_list.append(link.permalink)    # Append Permalink
-                        temp_list.append(link.url)          # Append URL
-                        temp_list.append(subreddit)         # Append Subreddit
-                        self.saved_list.append(temp_list)   # Temp List to Actual List
-                        i = i + 1
+                    for saved_list in pickle_file:
+                        self.saved_list.append(saved_list)
+                        i += 1
             except IOError:
                 print('Error: Could not read {}'.format(self.read_file))
     
@@ -302,12 +293,12 @@ def main():
     r.read_conf(args.config)
     r.login()
     
+    # Multi-threaded Download
+    r.thread_loop()
+    
     # Backup saved links if requested
     if args.backup != None:
         r.backup(args.backup)
-    
-    # Multi-threaded Download
-    r.thread_loop()
     
     # Parse Saved Links
     r.parse_saves(args.search, args.subreddit, args.write)
