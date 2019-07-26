@@ -12,7 +12,7 @@ import threading
 import argparse
 import pickle
 
-__version__ = 'RedditPy 1.1.0'
+__version__ = 'RedditPy 1.2.0'
 
 
 class RedditPy():
@@ -153,14 +153,15 @@ class RedditPy():
         
         # if reading from backup file
         if self.read_file != None:
-            try:
-                with open(self.read_file, 'rb') as open_local:
-                    pickle_file = pickle.load(open_local)
-                    for saved_list in pickle_file:
-                        self.saved_list.append(saved_list)
-                        i += 1
-            except IOError:
-                print('Error: Could not read {}'.format(self.read_file))
+            for j in self.read_file:
+                try:
+                    with open(j, 'rb') as open_local:
+                        pickle_file = pickle.load(open_local)
+                        for saved_list in pickle_file:
+                            self.saved_list.append(saved_list)
+                            i += 1
+                except IOError:
+                    print('Error: Could not read {}'.format(self.read_file))
     
     
     def parse_saves(self, args_search, args_subreddit, html_file):
@@ -264,8 +265,8 @@ def main():
     parser.add_argument(
             '-r', '--read',
             dest='read',
-            help='Read from backup file. Default redditpy.bak.',
-            required=False, nargs='?', const='redditpy.bak', type=str)
+            help='Read from backup file.',
+            required=False, nargs='*', type=str)
     parser.add_argument(
             '-b', '--backup',
             dest='backup',
